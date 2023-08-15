@@ -1,0 +1,75 @@
+Sub SendPersonalizedEmails()
+    Dim xlApp As Object
+    Dim xlWorkbook As Object
+    Dim xlSheetNamesEmails As Object
+    Dim xlSheetEmailSubject As Object
+    Dim xlSheetCCRecipients As Object
+    Dim outlookApp As Object
+    Dim mail As Object
+    Dim recipientName As String
+    Dim recipientEmail1 As String
+    Dim recipientEmail2 As String
+    Dim ccRecipients As String
+    Dim attachmentFolder As String
+    Dim attachmentPath As String
+    Dim emailGreeting As String
+    Dim emailBody As String
+    
+    ' Initialize Excel and Outlook objects
+    Set xlApp = CreateObject("Excel.Application")
+    Set xlWorkbook = xlApp.Workbooks.Open("C:\Users\gkyobe\Desktop\EMAILERFILES\INFORMATION.xlsx")
+    Set xlSheetNamesEmails = xlWorkbook.Sheets("NAMES AND EMAILS")
+    Set xlSheetEmailSubject = xlWorkbook.Sheets("EMAIL SUBJECT")
+    Set xlSheetCCRecipients = xlWorkbook.Sheets("cc_recipients")
+    
+    Set outlookApp = CreateObject("Outlook.Application")
+    
+    ' Loop through Excel rows and send emails
+    For i = 2 To xlSheetNamesEmails.Cells(xlSheetNamesEmails.Rows.Count, 1).End(-4162).Row ' -4162 corresponds to xlUp
+        recipientName = xlSheetNamesEmails.Cells(i, 1).Value
+        recipientEmail1 = xlSheetNamesEmails.Cells(i, 2).Value
+        recipientEmail2 = xlSheetNamesEmails.Cells(i, 3).Value
+        
+        ' Set CC recipients from the sheet and additional recipients
+        ccRecipients = ""
+        For Each ccCell In xlSheetCCRecipients.Range("A2:A" & xlSheetCCRecipients.Cells(xlSheetCCRecipients.Rows.Count, 1).End(-4162).Row)
+            If ccCell.Value <> "" Then
+                ccRecipients = ccRecipients & ccCell.Value & ";"
+            End If
+        Next ccCell
+        
+        ' Create and configure email
+        Set mail = outlookApp.CreateItem(0)
+        mail.To = recipientEmail1
+        mail.CC = ccRecipients
+        mail.Subject = xlSheetEmailSubject.Cells(2, 1).Value
+        
+        emailGreeting = "Dear " & recipientName & "," & vbCrLf & vbCrLf
+        emailBody = emailGreeting
+        
+        mail.Body = emailBody
+        mail.ReadReceiptRequested = True
+        
+        ' Attach files from specified folder
+        attachmentFolder = "C:\Users\gkyobe\Desktop\emailerfiles\ATTACHMENTS"
+        For Each attachmentFile In CreateObject("Scripting.FileSystemObject").GetFolder(attachmentFolder).Files
+            attachmentPath = attachmentFile.Path
+            mail.Attachments.Add attachmentPath
+        Next attachmentFile
+        
+        ' Display email
+        mail.Display
+    Next i
+    
+    ' Close Excel workbook and release objects
+    xlWorkbook.Close
+    xlApp.Quit
+    Set xlSheetNamesEmails = Nothing
+    Set xlSheetEmailSubject = Nothing
+    Set xlSheetCCRecipients = Nothing
+    Set xlWorkbook = Nothing
+    Set xlApp = Nothing
+    Set mail = Nothing
+    Set outlookApp = Nothing
+End Sub
+
